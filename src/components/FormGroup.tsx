@@ -6,8 +6,11 @@ interface Field {
   label: string;
   name: string;
   placeholder?: string;
-  options?: string[];
-  required: boolean;
+  options?: any[];
+  required?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 interface GroupProps {
@@ -15,17 +18,27 @@ interface GroupProps {
     title: string;
     fields: Field[];
   };
+  groupData: any;
+  onInputChange: (fieldName: string, value: any) => void;
 }
 
-const FormGroup: React.FC<GroupProps> = ({ group }) => (
-  <div id={group.title} className="mb-8">
-    <h2 className="text-xl font-semibold mb-4">{group.title}</h2>
-    <div className="space-y-4">
+const FormGroup: React.FC<GroupProps> = ({
+  group,
+  groupData,
+  onInputChange,
+}) => {
+  return (
+    <div>
       {group.fields.map((field, index) => (
-        <InputField key={index} field={field} />
+        <InputField
+          key={index}
+          field={field}
+          value={groupData[field.name] || ""}
+          onChange={(value) => onInputChange(field.name, value)}
+        />
       ))}
     </div>
-  </div>
-);
+  );
+};
 
 export default FormGroup;

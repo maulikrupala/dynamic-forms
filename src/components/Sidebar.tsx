@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ groups, onClick, activeGroup }) => {
                   : "hover:bg-gray-400"
               }`}
             >
-              <div className="text-gray-900	text-center ">{group.title}</div>
+              <div className="text-gray-900	text-left pl-6">{group.title}</div>
             </div>
           </li>
         ))}
