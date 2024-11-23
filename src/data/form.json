@@ -1,0 +1,79 @@
+{
+  "form": {
+    "title": "Personal",
+    "description": "Fill out your personal details",
+    "groups": [
+      {
+        "title": "Contact Information",
+        "fields": [
+          {
+            "type": "text",
+            "label": "Full Name",
+            "name": "fullName",
+            "placeholder": "Enter your full name",
+            "required": true
+          },
+          {
+            "type": "text",
+            "label": "Address",
+            "name": "address",
+            "placeholder": "Enter your address",
+            "required": true
+          },
+          {
+            "type": "text",
+            "label": "State",
+            "name": "state",
+            "placeholder": "Enter your state",
+            "required": false
+          },
+          {
+            "type": "text",
+            "label": "Phone Number",
+            "name": "phoneNumber",
+            "placeholder": "Enter your phone number",
+            "required": true
+          }
+        ]
+      },
+      {
+        "title": "Employment Details",
+        "fields": [
+          {
+            "type": "dropdown",
+            "label": "Employment Status",
+            "name": "employmentStatus",
+            "options": ["Full-Time", "Part-Time", "Unemployed", "Student"],
+            "required": true
+          },
+          {
+            "type": "text",
+            "label": "Current Job Title",
+            "name": "currentJobTitle",
+            "placeholder": "Enter your current job title",
+            "required": false
+          }
+        ]
+      },
+      {
+        "title": "Hobbies and Interests",
+        "fields": [
+          {
+            "type": "text",
+            "label": "Favorite Hobby",
+            "name": "favoriteHobby",
+            "placeholder": "Enter your favorite hobby",
+            "required": true
+          },
+          {
+            "type": "dropdown",
+            "label": "Level of Interest in Tech",
+            "name": "interestLevel",
+            "options": ["Beginner", "Intermediate", "Advanced", "Expert"],
+            "required": true
+          }
+        ]
+      }
+    ]
+  }
+}
