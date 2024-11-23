@@ -12,8 +12,8 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ groups, onClick, activeGroup }) => {
   return (
-    <div className="w-64 text-white h-screen border-r shadow-lg cursor-pointer">
-      <h2 className="text-lg font-semibold mb-4">Personal</h2>
+    <div className="w-64 h-screen border-r shadow-lg cursor-pointer fixed top-0 left-0">
+      <h2 className="text-lg font-semibold mb-4 p-3">Personal Information</h2>
       <ul className="space-y-2">
         {groups.map((group, index) => (
           <li key={index}>
@@ -33,5 +33,6 @@ const Sidebar: React.FC<SidebarProps> = ({ groups, onClick, activeGroup }) => {
     </div>
   );
 };
+
 
 export default Sidebar;
