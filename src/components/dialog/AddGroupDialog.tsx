@@ -50,27 +50,28 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({
     ]);
   };
 
-  const handleFieldChange = (index: number, key: string, value: any) => {
-    const updatedFields = [...fields];
-    updatedFields[index][key] = key === "options" ? value : value;
-    setFields(updatedFields);
-  };
+ const handleFieldChange = (index: number, key: string, value: any) => {
+    console.log(value, "value---");
+   const updatedFields = [...fields];
+   updatedFields[index][key] =  value || []
+   setFields(updatedFields);
+ };
 
-  const handleFieldTypeChange = (index: number, newType: string) => {
-    setFields((prev) =>
-      prev.map((field, idx) =>
-        idx === index
-          ? {
-              ...field,
-              type: newType,
-              options: ["radio", "dropdown"].includes(newType) ? [] : undefined,
-              min: ["slider", "number"].includes(newType) ? 0 : undefined,
-              max: ["slider", "number"].includes(newType) ? 100 : undefined,
-            }
-          : field
-      )
-    );
-  };
+ const handleFieldTypeChange = (index: number, newType: string) => {
+   setFields((prev) =>
+     prev.map((field, idx) =>
+       idx === index
+         ? {
+             ...field,
+             type: newType,
+             options: ["radio", "dropdown", "checkbox"].includes(newType)
+               ? [] // Initialize `options` as an empty array
+               : undefined,
+           }
+         : field
+     )
+   );
+ };
 
   const handleSave = () => {
     if (!title) {
@@ -103,6 +104,8 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({
 
   const baseInputClasses =
     "w-full px-4 py-2 shadow focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition duration-200 ease-in-out";
+
+    console.log(fields, "fields");
 
 
   return (
@@ -165,12 +168,22 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({
               <label className="block text-sm font-medium mt-4">
                 Options (comma-separated)
               </label>
-              <Chips
-                value={field.options || []}
-                onChange={(e) => handleFieldChange(index, "options", e.value)}
-                className={baseInputClasses}
-                placeholder="Add options"
+              <textarea
+                value={field.options || []} // Fallback to an empty array
+                onChange={(e) =>
+                  handleFieldChange(
+                    index,
+                    "options",
+                    e.target.value.split(",").map((opt) => opt.trim())
+                  )
+                }
+                className="w-full mt-2"
+                placeholder="Add options, separated by commas"
               />
+              {/* Show the options dynamically */}
+              <div className="mt-2">
+                <strong>Preview:</strong> {field.options?.join(", ") || "None"}
+              </div>
             </>
           )}
 

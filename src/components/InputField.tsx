@@ -71,7 +71,7 @@ const InputField: React.FC<InputFieldProps> = ({ field, value, onChange }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             {field.label}
           </label>
-          <div className="space-y-2 grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             {(field.options || [])?.map((option, index) => (
               <div key={index} className="flex items-center">
                 <input

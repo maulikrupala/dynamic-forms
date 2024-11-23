@@ -75,16 +75,17 @@ const App: React.FC = () => {
         />
       </div>
       {/* Main Content */}
-      <div className="ml-64">
-        <div className="p-3">Header</div>
+      <div className="ml-0 md:ml-64 mt-4">
         <div className=" flex-grow p-6">
           {/* Title */}
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">{activeGroup}</h1>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+            <h1 className="text-2xl font-bold text-center sm:text-left">
+              {activeGroup}
+            </h1>
             <button
               type="button"
               onClick={() => setIsDialogOpen(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 w-full sm:w-auto"
             >
               Add New Group
             </button>
@@ -123,7 +124,9 @@ const App: React.FC = () => {
         {isDialogOpen && (
           <AddGroupDialog
             onSave={handleAddGroup}
-            onClose={() => setIsDialogOpen(false)} visible={true}          />
+            onClose={() => setIsDialogOpen(false)}
+            visible={true}
+          />
         )}
       </div>
     </div>

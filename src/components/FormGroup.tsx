@@ -28,7 +28,7 @@ const FormGroup: React.FC<GroupProps> = ({
   onInputChange,
 }) => {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid md:grid-cols-2 gap-4">
       {group.fields.map((field, index) =>
         field && field.type ? (
           <InputField
