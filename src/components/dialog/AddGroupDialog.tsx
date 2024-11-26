@@ -4,14 +4,25 @@ import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
 import { Button } from "primereact/button";
 import { InputNumber } from "primereact/inputnumber";
-import { Chips } from "primereact/chips";
-import "primeicons/primeicons.css";
 
+interface FieldOption {
+  label: string;
+  value: string;
+}
 
-        
+interface Field {
+  type: string;
+  label: string;
+  name: string;
+  placeholder?: string;
+  required: boolean;
+  options?: FieldOption[];
+  min?: number;
+  max?: number;
+}
 
 interface AddGroupDialogProps {
-  onSave: (newGroup: { title: string; fields: any[] }) => void;
+  onSave: (newGroup: { title: string; fields: Field[] }) => void;
   onClose: () => void;
   visible: boolean;
 }
@@ -31,12 +42,16 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({
   onClose,
   visible,
 }) => {
-  const [title, setTitle] = useState("");
-  const [fields, setFields] = useState<any[]>([]);
+  const [title, setTitle] = useState<string>("");
+  const [fields, setFields] = useState<Field[]>([]);
+  const [currentOption, setCurrentOption] = useState<FieldOption>({
+    label: "",
+    value: "",
+  });
 
   const handleAddField = () => {
-    setFields((prev) => [
-      ...prev,
+    setFields((prevFields) => [
+      ...prevFields,
       {
         type: "text",
         label: "",
@@ -46,67 +61,92 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({
         options: [],
         min: undefined,
         max: undefined,
-      },
+      } as Field,
     ]);
   };
 
- const handleFieldChange = (index: number, key: string, value: any) => {
-    console.log(value, "value---");
-   const updatedFields = [...fields];
-   updatedFields[index][key] =  value || []
-   setFields(updatedFields);
- };
+  const handleFieldChange = (index: number, key: keyof Field, value: any) => {
+    const updatedFields = fields.map((field, idx) =>
+      idx === index ? { ...field, [key]: value } : field
+    );
+    setFields(updatedFields);
+  };
 
- const handleFieldTypeChange = (index: number, newType: string) => {
-   setFields((prev) =>
-     prev.map((field, idx) =>
-       idx === index
-         ? {
-             ...field,
-             type: newType,
-             options: ["radio", "dropdown", "checkbox"].includes(newType)
-               ? [] // Initialize `options` as an empty array
-               : undefined,
-           }
-         : field
-     )
-   );
- };
+  const handleFieldTypeChange = (index: number, newType: string) => {
+    const updatedFields = fields.map((field, idx) =>
+      idx === index
+        ? {
+            ...field,
+            type: newType,
+            options: ["radio", "dropdown", "checkbox"].includes(newType)
+              ? field.options || []
+              : [],
+          }
+        : field
+    );
+    setFields(updatedFields);
+  };
+
+  const addFieldOption = (index: number) => {
+    if (currentOption.label.trim() && currentOption.value.trim()) {
+      const updatedFields = fields.map((field, idx) =>
+        idx === index
+          ? {
+              ...field,
+              options: [...(field.options || []), { ...currentOption }],
+            }
+          : field
+      );
+      setFields(updatedFields);
+      setCurrentOption({ label: "", value: "" });
+    } else {
+      alert("Both label and value are required for options.");
+    }
+  };
+
+  const removeFieldOption = (fieldIndex: number, optionIndex: number) => {
+    const updatedFields = fields.map((field, idx) =>
+      idx === fieldIndex
+        ? {
+            ...field,
+            options: field.options?.filter((_, oIdx) => oIdx !== optionIndex),
+          }
+        : field
+    );
+    setFields(updatedFields);
+  };
 
   const handleSave = () => {
-    if (!title) {
-      alert("Please provide a title for the group.");
+    if (!title.trim()) {
+      alert("Please provide a group title.");
       return;
     }
+
     onSave({ title, fields });
     onClose();
   };
 
- const footer = (
-   <div className="flex justify-end space-x-2">
-     <Button
-       label="Cancel"
-       icon="pi pi-times"
-       className="p-button-text"
-       onClick={onClose}
-       severity="success"
-     />
-     <Button
-       label="Save"
-       icon="pi pi-check"
-       severity="danger"
-       outlined
-       onClick={handleSave}
-     />
-   </div>
- );
-
+  const footer = (
+    <div className="flex justify-end space-x-2">
+      <Button
+        label="Cancel"
+        icon="pi pi-times"
+        className="p-button-text"
+        onClick={onClose}
+        severity="success"
+      />
+      <Button
+        label="Save"
+        icon="pi pi-check"
+        severity="danger"
+        outlined
+        onClick={handleSave}
+      />
+    </div>
+  );
 
   const baseInputClasses =
     "w-full px-4 py-2 shadow focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition duration-200 ease-in-out";
-
-    console.log(fields, "fields");
-
 
   return (
     <Dialog
@@ -162,29 +202,82 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({
             placeholder="Enter field name"
           />
 
-          {/* Options */}
-          {["radio", "dropdown"].includes(field.type) && (
-            <>
-              <label className="block text-sm font-medium mt-4">
+          {/* Options Management */}
+          {["radio", "checkbox"].includes(field.type) && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium mb-2">Options</h4>
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                <InputText
+                  value={currentOption.label}
+                  onChange={(e) =>
+                    setCurrentOption((prev) => ({
+                      ...prev,
+                      label: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter option label"
+                  className="w-full"
+                />
+                <InputText
+                  value={currentOption.value}
+                  onChange={(e) =>
+                    setCurrentOption((prev) => ({
+                      ...prev,
+                      value: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter option value"
+                  className="w-full"
+                />
+                <Button
+                  label="Add Option"
+                  icon="pi pi-plus"
+                  className="col-span-2"
+                  onClick={() => addFieldOption(index)}
+                />
+              </div>
+              {field.options?.length && field.options?.length > 0 && (
+                <ul className="list-disc pl-5">
+                  {field.options.map((option, idx) => (
+                    <li key={idx} className="flex justify-between items-center">
+                      <span>
+                        <strong>Label:</strong> {option.label} |{" "}
+                        <strong>Value:</strong> {option.value}
+                      </span>
+                      <Button
+                        icon="pi pi-trash"
+                        className="p-button-text"
+                        onClick={() => removeFieldOption(index, idx)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* Options Management */}
+          {field.type === "dropdown" && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium">
                 Options (comma-separated)
               </label>
               <textarea
-                value={field.options || []} // Fallback to an empty array
+                value={field.options?.join(", ")} // Convert array to a string
                 onChange={(e) =>
                   handleFieldChange(
                     index,
                     "options",
-                    e.target.value.split(",").map((opt) => opt.trim())
+                    e.target.value.split(",").map((opt) => opt.trim()) // Convert string back to array
                   )
                 }
-                className="w-full mt-2"
-                placeholder="Add options, separated by commas"
+                className="w-full mt-2 px-3 py-2 border rounded-md shadow-sm"
+                placeholder="Enter options separated by commas"
               />
-              {/* Show the options dynamically */}
               <div className="mt-2">
                 <strong>Preview:</strong> {field.options?.join(", ") || "None"}
               </div>
-            </>
+            </div>
           )}
 
           {/* Min and Max */}
@@ -193,7 +286,7 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({
               <div>
                 <label className="block text-sm font-medium">Min Value</label>
                 <InputNumber
-                  value={field.min || ""}
+                  value={field.min || undefined}
                   onChange={(e) => handleFieldChange(index, "min", e.value)}
                   className={baseInputClasses}
                   placeholder="Min"
@@ -202,7 +295,7 @@ const AddGroupDialog: React.FC<AddGroupDialogProps> = ({
               <div>
                 <label className="block text-sm font-medium">Max Value</label>
                 <InputNumber
-                  value={field.max || ""}
+                  value={field.max || undefined}
                   onChange={(e) => handleFieldChange(index, "max", e.value)}
                   className={baseInputClasses}
                   placeholder="Max"

@@ -3,32 +3,61 @@ import Sidebar from "./components/Sidebar";
 import FormGroup from "./components/FormGroup";
 import formJson from "./data/form.json";
 import AddGroupDialog from "./components/dialog/AddGroupDialog";
+import { Field, FieldOption } from "./type";
 
-// Define the type for form data
 type FormData = {
   [group: string]: {
     [fieldName: string]: any;
   };
 };
 
-const App: React.FC = () => {
-  const [activeGroup, setActiveGroup] = useState<string>(
-    formJson.form.groups[0].title
-  );
-  const [formData, setFormData] = useState<FormData>({}); // Properly typed state
+// Field normalization function
+const normalizeFields = (fields: any[]): Field[] => {
+  return fields.map((field) => {
+    const normalizedOptions =
+      field.options && Array.isArray(field.options)
+        ? field.options.map((opt: string | FieldOption) =>
+            typeof opt === "string" ? { label: opt, value: opt } : opt
+          )
+        : undefined;
 
-  const [groups, setGroups] = useState(formJson.form.groups);
+    return {
+      ...field,
+      type: field.type as Field["type"], // Cast type to match Field
+      options: normalizedOptions,
+    };
+  });
+};
+
+const App: React.FC = () => {
+  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
+  const [formData, setFormData] = useState<FormData>({});
+  const [groups, setGroups] = useState(() => {
+    return formJson.form.groups.map((group) => ({
+      ...group,
+      fields: normalizeFields(group.fields), // Normalize fields here
+    }));
+  });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<{
+    [key: string]: boolean;
+  }>({});
+
+  const activeGroup = groups[activeGroupIndex];
 
   const handleSidebarClick = (groupTitle: string) => {
-    setActiveGroup(groupTitle);
+    const groupIndex = groups.findIndex((g) => g.title === groupTitle);
+    setActiveGroupIndex(groupIndex);
   };
 
   const handleAddGroup = (newGroup: { title: string; fields: any[] }) => {
-    setGroups((prev) => [...prev, newGroup]);
+    setGroups((prev) => [
+      ...prev,
+      { ...newGroup, fields: normalizeFields(newGroup.fields) },
+    ]);
     setFormData((prev) => ({
       ...prev,
-      [newGroup.title]: {}, // Initialize empty data for the new group
+      [newGroup.title]: {},
     }));
   };
 
@@ -36,13 +65,13 @@ const App: React.FC = () => {
     setFormData((prev) => ({
       ...prev,
       [group]: {
-        ...prev[group], // Preserve existing fields
-        [fieldName]: value, // Update the specific field
+        ...prev[group],
+        [fieldName]: value,
       },
     }));
   };
 
-  const validateField = (field: any, value: any) => {
+  const validateField = (field: Field, value: any) => {
     if (field.required && !value) {
       return `${field.label} is required.`;
     }
@@ -51,14 +80,58 @@ const App: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    alert("Form submitted!");
-    // Save to LocalStorage if needed
+    const errors = groups.some((group) =>
+      group.fields.some((field) =>
+        validateField(field, formData[group.title]?.[field.name])
+      )
+    );
+    if (errors) {
+      alert("Please fix the errors before submitting.");
+      return;
+    }
+    alert("Form submitted successfully!");
     localStorage.setItem("formData", JSON.stringify(formData));
+  };
+
+  const validateGroup = () => {
+    const currentGroup = groups[activeGroupIndex];
+    const errors: { [key: string]: string } = {};
+
+    currentGroup.fields.forEach((field) => {
+      const error = validateField(
+        field,
+        formData[currentGroup.title]?.[field.name]
+      );
+      if (error) {
+        errors[field.name] = error;
+      }
+    });
+
+    const updatedTouchedFields = { ...touchedFields };
+    currentGroup.fields.forEach((field) => {
+      updatedTouchedFields[field.name] = true;
+    });
+    setTouchedFields(updatedTouchedFields);
+
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (!validateGroup()) {
+      return;
+    }
+    localStorage.setItem("formData", JSON.stringify(formData));
+
+    if (activeGroupIndex < groups.length - 1) {
+      setActiveGroupIndex((prev) => prev + 1);
+    } else {
+      alert("Form submitted successfully!");
+    }
   };
 
   useEffect(() => {
     const initialData: FormData = groups.reduce((acc: FormData, group) => {
-      acc[group.title] = {}; // Initialize each group with an empty object
+      acc[group.title] = {};
       return acc;
     }, {} as FormData);
     setFormData(initialData);
@@ -66,21 +139,18 @@ const App: React.FC = () => {
 
   return (
     <div className="">
-      {/* Sidebar */}
       <div className="fixed top-0 left-0 h-full w-64">
         <Sidebar
           groups={groups}
           onClick={handleSidebarClick}
-          activeGroup={activeGroup}
+          activeGroup={activeGroup.title}
         />
       </div>
-      {/* Main Content */}
       <div className="ml-0 md:ml-64 mt-4">
-        <div className=" flex-grow p-6">
-          {/* Title */}
+        <div className="flex-grow p-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
             <h1 className="text-2xl font-bold text-center sm:text-left">
-              {activeGroup}
+              {activeGroup.title}
             </h1>
             <button
               type="button"
@@ -91,32 +161,24 @@ const App: React.FC = () => {
             </button>
           </div>
 
-          {/* Form */}
-          <form
-            // className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
-            onSubmit={handleSubmit}
-          >
-            {groups.map((group) =>
-              group.title === activeGroup ? (
-                <div key={group.title}>
-                  <FormGroup
-                    group={group}
-                    groupData={formData[group.title] || {}} // Pass current group data
-                    onInputChange={(fieldName, value) =>
-                      handleInputChange(group.title, fieldName, value)
-                    }
-                  />
-                </div>
-              ) : null
-            )}
+          <form onSubmit={handleSubmit}>
+            <FormGroup
+              group={activeGroup}
+              groupData={formData[activeGroup.title] || {}}
+              onInputChange={(fieldName, value) =>
+                handleInputChange(activeGroup.title, fieldName, value)
+              }
+              validateField={validateField}
+              touchedFields={touchedFields}
+            />
 
-            {/* Submit Button */}
             <div className="col-span-1 md:col-span-2 flex justify-end">
               <button
-                type="submit"
+                type="button"
+                onClick={handleNext}
                 className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition"
               >
-                Submit
+                {activeGroupIndex < groups.length - 1 ? "Next" : "Submit"}
               </button>
             </div>
           </form>
